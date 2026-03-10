@@ -8,13 +8,13 @@ import CryptoKit
 //   ~/Library/Mobile Documents/com~apple~CloudDocs/kc/<service>/<account>
 //
 // Each secret is a named bag of fields:
-//   kc set homelab shopify        → interactive: api-key, api-secret, endpoint...
-//   kc get homelab shopify        → shows all fields
-//   kc get homelab shopify api-key → raw value of that field (pipeable)
+//   kc set aws production         → interactive: access-key, secret-key, region...
+//   kc get aws production         → shows all fields
+//   kc get aws production secret-key → raw value of that field (pipeable)
 //
 // Single-value secrets use the reserved field name "value":
-//   kc set homelab cloudflare-token  → press Enter at field prompt → just a value
-//   kc get homelab cloudflare-token  → prints the raw value directly
+//   kc set github token           → press Enter at field prompt → just a value
+//   kc get github token           → prints the raw value directly
 //
 // Commands:
 //   kc init                                    First-time setup or restore
@@ -40,19 +40,19 @@ func usage() -> Never {
       kc list   [<service>]        [--json]    List stored secrets — never shows values
 
     Single-value example:
-      kc set    homelab cloudflare-token       # press Enter at field prompt
-      kc get    homelab cloudflare-token       # prints raw value
+      kc set    github token              # press Enter at field prompt
+      kc get    github token              # prints raw value
 
     Multi-field example:
-      kc set    homelab shopify                # enter api-key, api-secret, endpoint...
-      kc get    homelab shopify                # shows field table
-      kc get    homelab shopify api-key        # prints raw value of that field
-      kc update homelab shopify api-secret     # replaces just that field
-      kc delete homelab shopify endpoint       # removes just that field
+      kc set    aws production            # enter access-key, secret-key, region...
+      kc get    aws production            # shows field table
+      kc get    aws production secret-key # prints raw value of that field
+      kc update aws production secret-key # replaces just that field
+      kc delete aws production region     # removes just that field
 
     Scripting:
       Set KC_PASSPHRASE in the environment to bypass all prompts and Keychain access.
-      export TOKEN=$(kc get homelab cloudflare-token)
+      export TOKEN=$(kc get github token)
     """)
     exit(0)
 }
