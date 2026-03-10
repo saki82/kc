@@ -303,7 +303,7 @@ case "import":
            (value.hasPrefix("'")  && value.hasSuffix("'")) {
             value = String(value.dropFirst().dropLast())
         }
-        guard !key.isEmpty else { continue }
+        guard !key.isEmpty, !value.isEmpty else { continue }
         fields[key] = value
     }
 

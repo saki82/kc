@@ -12,4 +12,4 @@ DerivedData/
 .DS_Store
 
 # Compiled binary — install from source, don't commit the binary
-kc
+/kc
