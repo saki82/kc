@@ -1,0 +1,15 @@
+# Swift build artifacts
+.build/
+.swiftpm/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+*.xcuserdata
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Compiled binary — install from source, don't commit the binary
+kc
