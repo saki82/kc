@@ -20,10 +20,19 @@ The built-in `security` CLI cannot set `kSecAttrSynchronizable`, so items it wri
 git clone https://github.com/<you>/kc.git
 cd kc
 swift build -c release
-cp .build/release/kc /usr/local/bin/kc
+mkdir -p ~/.local/bin
+cp .build/release/kc ~/.local/bin/kc
 ```
 
-On a new machine, this is all you need. Secrets are already there via iCloud.
+`~/.local/bin` is the XDG-standard location for user-scoped binaries — no `sudo`, no package manager, no root ownership. `/usr/local/bin` is owned by root on a stock macOS install and requires `sudo`.
+
+Ensure `~/.local/bin` is on your PATH (add to `~/.zshrc` if not already there):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+On a new machine: clone, build, copy. Secrets are already there via iCloud.
 
 ---
 
