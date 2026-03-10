@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (arm64)
+        run: |
+          swift build -c release --arch arm64
+
+      - name: Build (x86_64)
+        run: |
+          swift build -c release --arch x86_64
+
+      - name: Create universal binary
+        run: |
+          lipo -create \
+            .build/arm64-apple-macosx/release/kc \
+            .build/x86_64-apple-macosx/release/kc \
+            -output kc
+          chmod +x kc
+
+      - name: Package binary
+        run: |
+          tar -czf kc-${{ github.ref_name }}-macos.tar.gz kc
+          shasum -a 256 kc-${{ github.ref_name }}-macos.tar.gz > kc-${{ github.ref_name }}-macos.tar.gz.sha256
+          cat kc-${{ github.ref_name }}-macos.tar.gz.sha256
+
+      - name: Compute source tarball SHA256
+        id: source_sha
+        run: |
+          VERSION=${{ github.ref_name }}
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz"
+          curl -sL "$URL" -o source.tar.gz
+          SHA=$(shasum -a 256 source.tar.gz | awk '{print $1}')
+          echo "sha256=${SHA}" >> $GITHUB_OUTPUT
+          echo "Source tarball SHA256: ${SHA}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            kc-${{ github.ref_name }}-macos.tar.gz
+            kc-${{ github.ref_name }}-macos.tar.gz.sha256
+          body: |
+            ## Install via Homebrew
+            ```bash
+            brew tap saki82/kc
+            brew install kc
+            ```
+
+            ## Manual install
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/kc-${{ github.ref_name }}-macos.tar.gz | tar xz
+            mv kc ~/.local/bin/kc
+            ```
+
+            ## Source tarball SHA256 (for formula updates)
+            `${{ steps.source_sha.outputs.sha256 }}`
