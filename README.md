@@ -85,6 +85,7 @@ kc init                                  First-time setup or restore on a new ma
 kc set    <service> <account>            Store a secret
 kc get    <service> <account> [field]    Retrieve all fields or one raw value
 kc update <service> <account> [field]    Update a field
+kc import <service> <account> <file>     Import from a .env file
 kc delete <service> <account> [field]    Delete a field or entire secret
 kc list   [<service>]        [--json]    List secrets — values never shown
 kc -h                                    Show help
@@ -129,6 +130,34 @@ kc update aws production secret-key  # replace one field
 kc delete aws production region      # remove one field
 kc delete aws production             # remove entire secret
 ```
+
+---
+
+## Migrating from .env files
+
+```bash
+kc import aws production .env.production
+```
+
+Parses `KEY=value` pairs (skips comments and blank lines, strips `export` prefix and surrounding quotes), shows a preview, and asks for confirmation before writing. Field names are preserved exactly as-is.
+
+```
+Importing 3 field(s) into aws/production:
+
+  FIELD             VALUE
+  ──────────────────────────────
+  AWS_ACCESS_KEY_ID   AKIA...
+  AWS_REGION          eu-central-1
+  AWS_SECRET_ACCESS_KEY  wJalr...
+
+Import into aws/production? [y/N]
+```
+
+Fails if `aws/production` already exists — use `kc update` to modify individual fields after import.
+
+**Migrating from shell profiles** (`.zshrc`, `.zshenv`): extract `export KEY=value` lines into a temporary `.env` file, run `kc import`, then replace the hardcoded values in your profile with `$(kc get ...)` calls.
+
+**Migrating from password managers**: export to CSV, then use `kc set` interactively — CSV schemas vary too much per app to import reliably.
 
 ---
 

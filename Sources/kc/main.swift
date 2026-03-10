@@ -36,6 +36,7 @@ func usage() -> Never {
       kc set    <service> <account>            Store a secret (interactive field loop)
       kc get    <service> <account> [field]    Show all fields or retrieve one (raw, pipeable)
       kc update <service> <account> [field]    Update a field (or the single value)
+      kc import <service> <account> <file>    Import from a .env file
       kc delete <service> <account> [field]    Delete a field or the entire secret
       kc list   [<service>]        [--json]    List stored secrets — never shows values
 
@@ -274,7 +275,58 @@ case "delete":
         print("✓ Deleted \(service)/\(account)")
     }
 
-// MARK: list
+// MARK: import
+case "import":
+    guard positional.count >= 3 else { fail("usage: kc import <service> <account> <file>") }
+    let service  = positional[0]
+    let account  = positional[1]
+    let filePath = positional[2]
+
+    // Read and parse .env file
+    guard let raw = try? String(contentsOfFile: filePath, encoding: .utf8) else {
+        fail("cannot read file: \(filePath)")
+    }
+
+    var fields: [String: String] = [:]
+    for line in raw.components(separatedBy: .newlines) {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
+        // Handle both KEY=value and export KEY=value
+        let stripped = trimmed.hasPrefix("export ") ? String(trimmed.dropFirst(7)) : trimmed
+        guard let eq = stripped.firstIndex(of: "=") else { continue }
+        let key   = String(stripped[stripped.startIndex..<eq])
+                        .trimmingCharacters(in: .whitespaces)
+        var value = String(stripped[stripped.index(after: eq)...])
+                        .trimmingCharacters(in: .whitespaces)
+        // Strip surrounding quotes if present
+        if (value.hasPrefix("\"") && value.hasSuffix("\"")) ||
+           (value.hasPrefix("'")  && value.hasSuffix("'")) {
+            value = String(value.dropFirst().dropLast())
+        }
+        guard !key.isEmpty else { continue }
+        fields[key] = value
+    }
+
+    guard !fields.isEmpty else { fail("no valid KEY=value pairs found in \(filePath)") }
+
+    // Preview
+    let keyW = max(fields.keys.map { $0.count }.max() ?? 0, 5)
+    print("Importing \(fields.count) field(s) into \(service)/\(account):\n")
+    print("  " + "FIELD".padding(toLength: keyW, withPad: " ", startingAt: 0) + "  VALUE")
+    print("  " + String(repeating: "─", count: keyW + 2 + 24))
+    for key in fields.keys.sorted() {
+        let k = key.padding(toLength: keyW, withPad: " ", startingAt: 0)
+        let v = fields[key] ?? ""
+        let preview = v.count > 24 ? String(v.prefix(21)) + "..." : v
+        print("  \(k)  \(preview)")
+    }
+    print("")
+    guard confirm("Import into \(service)/\(account)? [y/N] ") else { print("Cancelled."); exit(0) }
+
+    let key     = resolveKey()
+    let payload = SecretPayload(fields: fields)
+    savePayload(payload, service: service, account: account, key: key, overwrite: false)
+    print("✓ Imported \(fields.count) field(s) into \(service)/\(account)")
 case "list":
     let service: String? = positional.first
     do {
