@@ -169,11 +169,34 @@ AWS_SECRET=$(kc get aws production secret-key) your-command
 
 # Shell profile — resolved silently after init, no prompt
 export STRIPE_SECRET_KEY=$(kc get stripe live secret-key)
+```
 
-# direnv (.envrc) — auto-loads on cd, add .envrc to .gitignore
+### direnv (recommended for project-level secrets)
+
+[direnv](https://direnv.net) executes `.envrc` as a shell script when you `cd` into a directory, injecting secrets as env vars before your process starts. Unlike `.env` files, command substitution works.
+
+```bash
+brew install direnv
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc  # or ~/.bash_profile
+```
+
+Add an `.envrc` to your project root:
+
+```bash
+# .envrc — add to .gitignore, never commit
+export STRIPE_SECRET_KEY=$(kc get stripe live secret-key)
+export STRIPE_WEBHOOK_SECRET=$(kc get stripe live webhook-secret)
 export AWS_ACCESS_KEY_ID=$(kc get aws production access-key)
 export AWS_SECRET_ACCESS_KEY=$(kc get aws production secret-key)
 ```
+
+```bash
+direnv allow   # run once per project to whitelist the .envrc
+```
+
+From that point on, `cd` into the project and secrets are live. Your TypeScript, Go, or Python process reads them via `process.env` / `os.Getenv` / `os.environ` — no dotenv library needed, no `.env` files in the repo.
+
+> **Why not `.env` files?** Dotenv parsers are not shells — `$(...)` is never evaluated. The literal string `$(kc get stripe live secret-key)` would be passed to your app. `.envrc` + direnv is the correct layer for dynamic secret injection.
 
 ### Scripting and automation
 
